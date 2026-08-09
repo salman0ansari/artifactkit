@@ -1,0 +1,5 @@
+service,latency_ms,status
+parser,4,ok
+indexer,12,ok
+worker,87,degraded
+
