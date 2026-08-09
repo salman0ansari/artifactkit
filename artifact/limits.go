@@ -4,27 +4,33 @@ import "fmt"
 
 // Limits bounds parser work and protects agent runtimes from hostile artifacts.
 type Limits struct {
-	MaxInputBytes       int64
-	MaxTextBytes        int64
-	MaxNodes            int
-	MaxNestingDepth     int
-	MaxArchiveDepth     int
-	MaxArchiveEntries   int
-	MaxExpandedBytes    int64
-	MaxCompressionRatio float64
+	MaxInputBytes        int64
+	MaxTextBytes         int64
+	MaxNodes             int
+	MaxNestingDepth      int
+	MaxArchiveDepth      int
+	MaxArchiveEntries    int
+	MaxExpandedBytes     int64
+	MaxCompressionRatio  float64
+	MaxStoredBytes       int64
+	MaxStoredArtifacts   int
+	MaxResourceReadBytes int64
 }
 
 // DefaultLimits returns conservative limits suitable for local agent tools.
 func DefaultLimits() Limits {
 	return Limits{
-		MaxInputBytes:       256 << 20,
-		MaxTextBytes:        32 << 20,
-		MaxNodes:            100_000,
-		MaxNestingDepth:     256,
-		MaxArchiveDepth:     4,
-		MaxArchiveEntries:   10_000,
-		MaxExpandedBytes:    512 << 20,
-		MaxCompressionRatio: 200,
+		MaxInputBytes:        256 << 20,
+		MaxTextBytes:         32 << 20,
+		MaxNodes:             100_000,
+		MaxNestingDepth:      256,
+		MaxArchiveDepth:      4,
+		MaxArchiveEntries:    10_000,
+		MaxExpandedBytes:     512 << 20,
+		MaxCompressionRatio:  200,
+		MaxStoredBytes:       512 << 20,
+		MaxStoredArtifacts:   128,
+		MaxResourceReadBytes: 16 << 20,
 	}
 }
 
@@ -35,6 +41,9 @@ func (l Limits) Validate() error {
 	}
 	if l.MaxArchiveDepth <= 0 || l.MaxArchiveEntries <= 0 || l.MaxExpandedBytes <= 0 || l.MaxCompressionRatio <= 0 {
 		return fmt.Errorf("artifactkit: archive limits must be positive")
+	}
+	if l.MaxStoredBytes <= 0 || l.MaxStoredArtifacts <= 0 || l.MaxResourceReadBytes <= 0 {
+		return fmt.Errorf("artifactkit: resource store limits must be positive")
 	}
 	return nil
 }

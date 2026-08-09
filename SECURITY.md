@@ -14,6 +14,7 @@ Include the affected format, the smallest artifact that reproduces the issue, co
 - Input, text, node count, nesting, archive entry, expansion, and compression-ratio limits are enabled by default.
 - Archive paths are normalized and must not escape their logical root.
 - Parsing stays local unless an embedding application explicitly moves returned data elsewhere.
+- MCP file access is restricted to configured roots after symlink resolution.
+- Lazy source bytes and loaded agent documents are held in bounded LRU caches and can be cleared explicitly.
 
 No parser should weaken these guarantees. New parsers must include malformed-input and limit tests.
-

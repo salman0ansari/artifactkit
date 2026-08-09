@@ -30,7 +30,14 @@ func Find(document *artifact.Artifact, query string, limit int) []Result {
 	tokens := strings.Fields(strings.ToLower(query))
 	var results []Result
 	artifact.Walk(&document.Root, func(node *artifact.Node) bool {
-		haystack := strings.ToLower(strings.TrimSpace(node.Name + " " + node.Text))
+		var attributes strings.Builder
+		for key, value := range node.Attributes {
+			attributes.WriteByte(' ')
+			attributes.WriteString(key)
+			attributes.WriteByte(' ')
+			attributes.WriteString(value)
+		}
+		haystack := strings.ToLower(strings.TrimSpace(node.Name + " " + node.Text + attributes.String()))
 		if haystack == "" {
 			return true
 		}

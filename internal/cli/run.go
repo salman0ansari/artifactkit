@@ -11,6 +11,7 @@ import (
 
 	artifactkit "github.com/salman0ansari/artifactkit"
 	"github.com/salman0ansari/artifactkit/artifact"
+	"github.com/salman0ansari/artifactkit/mcpserver"
 	"github.com/salman0ansari/artifactkit/render"
 	"github.com/salman0ansari/artifactkit/search"
 )
@@ -27,6 +28,8 @@ func Run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 		return find(ctx, args[1:], stdin, stdout, stderr)
 	case "formats":
 		return formats(args[1:], stdout, stderr)
+	case "mcp":
+		return runMCP(ctx, args[1:], stdin, stdout, stderr)
 	case "version", "--version", "-version":
 		fmt.Fprintln(stdout, artifactkit.Version)
 		return 0
@@ -150,6 +153,36 @@ func configuredEngine(maxBytes int64) (*artifactkit.Engine, error) {
 	return artifactkit.New(artifactkit.WithLimits(limits)), nil
 }
 
+type rootFlags []string
+
+func (roots *rootFlags) String() string { return strings.Join(*roots, ",") }
+func (roots *rootFlags) Set(value string) error {
+	if strings.TrimSpace(value) == "" {
+		return errors.New("artifactkit: --root cannot be empty")
+	}
+	*roots = append(*roots, value)
+	return nil
+}
+
+func runMCP(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+	set := flag.NewFlagSet("mcp", flag.ContinueOnError)
+	set.SetOutput(stderr)
+	var roots rootFlags
+	set.Var(&roots, "root", "directory agents may read; repeat for multiple roots (default: current directory)")
+	if err := set.Parse(args); err != nil {
+		return 2
+	}
+	if set.NArg() != 0 {
+		fmt.Fprintln(stderr, "usage: artifactkit mcp [--root PATH]...")
+		return 2
+	}
+	if err := mcpserver.Run(ctx, roots, stdin, stdout); err != nil {
+		fmt.Fprintf(stderr, "artifactkit mcp: %v\n", err)
+		return 1
+	}
+	return 0
+}
+
 func load(ctx context.Context, engine *artifactkit.Engine, path, name string, stdin io.Reader) (*artifact.Artifact, error) {
 	if path == "-" {
 		return engine.InspectReader(ctx, name, stdin)
@@ -164,5 +197,6 @@ func usage(writer io.Writer) {
 	fmt.Fprintln(writer, "  artifactkit inspect [--output json|markdown] [--pretty] FILE")
 	fmt.Fprintln(writer, "  artifactkit find [--limit N] FILE QUERY")
 	fmt.Fprintln(writer, "  artifactkit formats [--json]")
+	fmt.Fprintln(writer, "  artifactkit mcp [--root PATH]...")
 	fmt.Fprintln(writer, "  artifactkit version")
 }

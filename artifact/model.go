@@ -139,3 +139,16 @@ func Walk(root *Node, visit func(*Node) bool) {
 		Walk(&root.Children[i], visit)
 	}
 }
+
+// FindNode returns a node by deterministic ID.
+func FindNode(root *Node, id string) *Node {
+	var found *Node
+	Walk(root, func(node *Node) bool {
+		if node.ID == id {
+			found = node
+			return false
+		}
+		return found == nil
+	})
+	return found
+}

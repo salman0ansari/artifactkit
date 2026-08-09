@@ -1,9 +1,9 @@
 # ArtifactKit
 
-ArtifactKit turns local files into deterministic, typed trees that agents can inspect, search, and cite without loading an entire artifact into context.
+ArtifactKit turns local files into deterministic, typed trees that agents can inspect, search, page through, and cite without loading an entire artifact into context. It ships as a Go library, CLI, and local MCP server.
 
 ```text
-file -> detect -> parse -> normalized tree -> search / Markdown / JSON / MCP
+file -> detect -> parse -> normalized tree -> search / read / tables / MCP
                               |
                               +-> exact source locator
 ```
@@ -31,11 +31,17 @@ The important output is not another Markdown blob. Every section, value, row, an
 
 ## Build
 
-ArtifactKit requires Go 1.24.1 or newer.
+ArtifactKit requires Go 1.25 or newer.
 
 ```bash
 go build -o artifactkit ./cmd/artifactkit
 go test ./...
+```
+
+Or install the command directly:
+
+```bash
+go install github.com/salman0ansari/artifactkit/cmd/artifactkit@latest
 ```
 
 ## CLI
@@ -70,6 +76,14 @@ List the exact formats supported by the installed build:
 artifactkit formats --json
 ```
 
+Start the agent server with an explicit filesystem boundary:
+
+```bash
+artifactkit mcp --root /absolute/path/to/documents
+```
+
+The MCP server exposes `artifact_inspect`, `artifact_find`, `artifact_read`, `artifact_extract_table`, `artifact_list_attachments`, `artifact_get_provenance`, and `artifact_formats`. See [MCP setup](docs/mcp.md).
+
 ## Go API
 
 ```go
@@ -98,6 +112,12 @@ func main() {
 
 Use `artifactkit.WithLimits` to set input, text, node, nesting, expansion, and compression-ratio limits. Use `artifactkit.WithRegistry` to run only trusted parsers or register application-specific formats.
 
+Attachments, archive entries, and embedded Office media are lazy resources. Inspecting registers their stable `artifact://` URIs in a bounded LRU store; read only the byte range an agent needs:
+
+```go
+content, err := engine.ReadResource(ctx, document.Resources[0].URI, 0, 4096)
+```
+
 ## Design rules
 
 - Local first: parsing does not require a network service.
@@ -106,9 +126,12 @@ Use `artifactkit.WithLimits` to set input, text, node, nesting, expansion, and c
 - Provenance preserving: normalized content points back to its source location.
 - Safe by default: parsing is bounded; active content and macros are never executed.
 - Archive aware: traversal paths, duplicate entries, links, encryption, expansion, and suspicious compression ratios are handled explicitly.
-- Embeddable: the CLI and upcoming MCP server use the same public Go engine.
+- Embeddable: the CLI and MCP server use the same public Go engine.
+- Root restricted: the MCP server resolves symlinks and rejects paths outside configured directories.
 
 ArtifactKit preserves spreadsheet formulas but never evaluates them. PDF extraction reads embedded text; it does not perform OCR on scanned pages.
+
+See [architecture](docs/architecture.md), [security policy](SECURITY.md), and [contributing](CONTRIBUTING.md) for implementation and trust-boundary details.
 
 ## Status
 

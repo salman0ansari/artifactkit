@@ -19,12 +19,15 @@ import (
 	pdfparser "github.com/salman0ansari/artifactkit/parsers/pdf"
 	"github.com/salman0ansari/artifactkit/parsers/text"
 	"github.com/salman0ansari/artifactkit/parsers/web"
+	"github.com/salman0ansari/artifactkit/resource"
 )
 
 // Engine detects and parses artifacts using a bounded parser registry.
 type Engine struct {
-	registry *parser.Registry
-	limits   artifact.Limits
+	registry                *parser.Registry
+	limits                  artifact.Limits
+	resources               *resource.Store
+	resourceStoreConfigured bool
 }
 
 // New returns an engine with the built-in parsers and conservative safety limits.
@@ -34,6 +37,9 @@ func New(options ...Option) *Engine {
 		if option != nil {
 			option(engine)
 		}
+	}
+	if !engine.resourceStoreConfigured {
+		engine.resources = resource.NewStore(engine.limits)
 	}
 	return engine
 }
@@ -52,6 +58,9 @@ func defaultRegistry() *parser.Registry {
 
 // Formats lists formats supported by the current engine registry.
 func (e *Engine) Formats() []artifact.Format { return e.registry.Formats() }
+
+// Limits returns the engine's immutable parser and resource bounds.
+func (e *Engine) Limits() artifact.Limits { return e.limits }
 
 // InspectPath parses a regular file from disk.
 func (e *Engine) InspectPath(ctx context.Context, path string) (*artifact.Artifact, error) {
@@ -122,5 +131,31 @@ func (e *Engine) inspect(ctx context.Context, source parser.Source) (*artifact.A
 	if err := artifact.Finalize(result, source.Data, e.limits); err != nil {
 		return nil, fmt.Errorf("finalize %q: %w", source.Name, err)
 	}
+	if e.resources != nil {
+		e.resources.Put(result, source.Data)
+	}
 	return result, nil
+}
+
+// ReadResource reads a bounded byte range from an attachment or embedded package part.
+func (e *Engine) ReadResource(ctx context.Context, uri string, offset, limit int64) (*resource.Content, error) {
+	if e.resources == nil {
+		return nil, resource.ErrExpired
+	}
+	return e.resources.Read(ctx, uri, offset, limit)
+}
+
+// ResourceStats reports the current bounded source-byte cache usage.
+func (e *Engine) ResourceStats() resource.Stats {
+	if e.resources == nil {
+		return resource.Stats{}
+	}
+	return e.resources.Stats()
+}
+
+// ClearResources immediately releases all retained source bytes.
+func (e *Engine) ClearResources() {
+	if e.resources != nil {
+		e.resources.Clear()
+	}
 }
