@@ -37,6 +37,10 @@ func markdownNode(writer io.Writer, node *artifact.Node, headingLevel, indent in
 		if _, err := fmt.Fprintf(writer, "%s %s\n\n", strings.Repeat("#", level), node.Name); err != nil {
 			return err
 		}
+	case artifact.KindPage:
+		if _, err := fmt.Fprintf(writer, "%s %s\n\n%s\n\n", strings.Repeat("#", min(headingLevel, 6)), node.Name, node.Text); err != nil {
+			return err
+		}
 	case artifact.KindParagraph:
 		if _, err := fmt.Fprintf(writer, "%s\n\n", node.Text); err != nil {
 			return err
@@ -45,6 +49,7 @@ func markdownNode(writer io.Writer, node *artifact.Node, headingLevel, indent in
 		if err := markdownTable(writer, node); err != nil {
 			return err
 		}
+		return nil
 	case artifact.KindAttachment:
 		if _, err := fmt.Fprintf(writer, "- Attachment: **%s**%s\n", node.Name, detailSuffix(node.Attributes)); err != nil {
 			return err

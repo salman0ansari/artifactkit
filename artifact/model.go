@@ -17,6 +17,7 @@ const (
 	KindRow        Kind = "row"
 	KindCell       Kind = "cell"
 	KindSlide      Kind = "slide"
+	KindPage       Kind = "page"
 	KindSheet      Kind = "sheet"
 	KindImage      Kind = "image"
 	KindLink       Kind = "link"
@@ -41,6 +42,7 @@ type ByteRange struct {
 // a spreadsheet cell inside an archive can have path, sheet, cell, and bytes.
 type Locator struct {
 	Path      string     `json:"path,omitempty"`
+	Subpath   string     `json:"subpath,omitempty"`
 	Page      int        `json:"page,omitempty"`
 	Slide     int        `json:"slide,omitempty"`
 	Sheet     string     `json:"sheet,omitempty"`
@@ -50,13 +52,16 @@ type Locator struct {
 
 // IsZero lets JSON encoders omit absent provenance cleanly.
 func (l Locator) IsZero() bool {
-	return l.Path == "" && l.Page == 0 && l.Slide == 0 && l.Sheet == "" && l.Cell == "" && l.ByteRange == nil
+	return l.Path == "" && l.Subpath == "" && l.Page == 0 && l.Slide == 0 && l.Sheet == "" && l.Cell == "" && l.ByteRange == nil
 }
 
 func (l Locator) String() string {
 	parts := make([]string, 0, 6)
 	if l.Path != "" {
 		parts = append(parts, l.Path)
+	}
+	if l.Subpath != "" {
+		parts = append(parts, l.Subpath)
 	}
 	if l.Page > 0 {
 		parts = append(parts, fmt.Sprintf("page:%d", l.Page))

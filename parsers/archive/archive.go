@@ -3,13 +3,11 @@ package archive
 
 import (
 	"archive/tar"
-	"archive/zip"
 	"bytes"
 	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
-	"math"
 	"os"
 	"path"
 	"strconv"
@@ -17,6 +15,7 @@ import (
 	"time"
 
 	"github.com/salman0ansari/artifactkit/artifact"
+	"github.com/salman0ansari/artifactkit/internal/ziputil"
 	"github.com/salman0ansari/artifactkit/parser"
 )
 
@@ -63,39 +62,17 @@ func (*Parser) Parse(ctx context.Context, source parser.Source, limits artifact.
 }
 
 func parseZIP(ctx context.Context, source parser.Source, limits artifact.Limits) (*artifact.Artifact, error) {
-	reader, err := zip.NewReader(bytes.NewReader(source.Data), int64(len(source.Data)))
+	reader, err := ziputil.Open(source.Data, limits)
 	if err != nil {
 		return nil, fmt.Errorf("parse ZIP: %w", err)
 	}
-	if len(reader.File) > limits.MaxArchiveEntries {
-		return nil, &artifact.LimitError{Limit: "archive entries", Value: int64(len(reader.File)), Max: int64(limits.MaxArchiveEntries)}
-	}
 	result, archiveNode := newArchive(source, "zip", "application/zip")
-	var expanded int64
-	seen := make(map[string]struct{}, len(reader.File))
-	for _, file := range reader.File {
+	for _, archiveEntry := range reader.Entries {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
-		name, err := safePath(file.Name)
-		if err != nil {
-			return nil, fmt.Errorf("parse ZIP: %w", err)
-		}
-		if _, exists := seen[name]; exists {
-			return nil, fmt.Errorf("parse ZIP: duplicate archive path %q", name)
-		}
-		seen[name] = struct{}{}
-		if file.UncompressedSize64 > math.MaxInt64 {
-			return nil, &artifact.LimitError{Limit: "expanded bytes", Value: math.MaxInt64, Max: limits.MaxExpandedBytes}
-		}
+		name, file := archiveEntry.Name, archiveEntry.File
 		size := int64(file.UncompressedSize64)
-		if size > limits.MaxExpandedBytes-expanded {
-			return nil, &artifact.LimitError{Limit: "expanded bytes", Value: expanded + size, Max: limits.MaxExpandedBytes}
-		}
-		expanded += size
-		if err := checkRatio(size, int64(file.CompressedSize64), limits); err != nil {
-			return nil, fmt.Errorf("parse ZIP entry %q: %w", name, err)
-		}
 		locator := artifact.Locator{Path: name}
 		attributes := map[string]string{
 			"size":            strconv.FormatInt(size, 10),
@@ -119,7 +96,7 @@ func parseZIP(ctx context.Context, source parser.Source, limits artifact.Limits)
 			return nil, &artifact.LimitError{Limit: "nodes", Value: int64(len(archiveNode.Children) + 2), Max: int64(limits.MaxNodes)}
 		}
 	}
-	archiveNode.Attributes = map[string]string{"entries": strconv.Itoa(len(reader.File)), "expanded_size": strconv.FormatInt(expanded, 10)}
+	archiveNode.Attributes = map[string]string{"entries": strconv.Itoa(len(reader.Entries)), "expanded_size": strconv.FormatInt(reader.Expanded, 10)}
 	return result, nil
 }
 
@@ -146,7 +123,7 @@ func parseTarGZIP(ctx context.Context, source parser.Source, limits artifact.Lim
 	if counter.count > limits.MaxExpandedBytes {
 		return nil, &artifact.LimitError{Limit: "expanded bytes", Value: counter.count, Max: limits.MaxExpandedBytes}
 	}
-	if err := checkRatio(counter.count, int64(len(source.Data)), limits); err != nil {
+	if err := ziputil.CheckRatio(counter.count, int64(len(source.Data)), limits); err != nil {
 		return nil, fmt.Errorf("parse tar.gz: %w", err)
 	}
 	return result, nil
@@ -171,7 +148,7 @@ func readTAR(ctx context.Context, reader *tar.Reader, source parser.Source, limi
 		if entries > limits.MaxArchiveEntries {
 			return &artifact.LimitError{Limit: "archive entries", Value: int64(entries), Max: int64(limits.MaxArchiveEntries)}
 		}
-		name, err := safePath(header.Name)
+		name, err := ziputil.CleanPath(header.Name)
 		if err != nil {
 			return fmt.Errorf("parse TAR: %w", err)
 		}
@@ -220,14 +197,14 @@ func parseGZIP(ctx context.Context, source parser.Source, limits artifact.Limits
 	if count > limits.MaxExpandedBytes {
 		return nil, &artifact.LimitError{Limit: "expanded bytes", Value: count, Max: limits.MaxExpandedBytes}
 	}
-	if err := checkRatio(count, int64(len(source.Data)), limits); err != nil {
+	if err := ziputil.CheckRatio(count, int64(len(source.Data)), limits); err != nil {
 		return nil, fmt.Errorf("parse GZIP: %w", err)
 	}
 	name := reader.Name
 	if name == "" {
 		name = strings.TrimSuffix(source.Name, ".gz")
 	}
-	name, err = safePath(name)
+	name, err = ziputil.CleanPath(name)
 	if err != nil {
 		return nil, fmt.Errorf("parse GZIP: %w", err)
 	}
@@ -248,32 +225,6 @@ func newArchive(source parser.Source, format, mediaType string) (*artifact.Artif
 	archiveNode := artifact.Node{Kind: artifact.KindArchive, Name: source.Name}
 	result.Root = artifact.Node{Kind: artifact.KindDocument, Name: source.Name, Children: []artifact.Node{archiveNode}}
 	return result, &result.Root.Children[0]
-}
-
-func safePath(value string) (string, error) {
-	value = strings.ReplaceAll(value, "\\", "/")
-	if value == "" || strings.ContainsRune(value, 0) || strings.HasPrefix(value, "/") || (len(value) >= 2 && value[1] == ':') {
-		return "", fmt.Errorf("unsafe archive path %q", value)
-	}
-	cleaned := path.Clean(value)
-	if cleaned == "." || cleaned == ".." || strings.HasPrefix(cleaned, "../") {
-		return "", fmt.Errorf("unsafe archive path %q", value)
-	}
-	return cleaned, nil
-}
-
-func checkRatio(expanded, compressed int64, limits artifact.Limits) error {
-	if expanded <= 0 {
-		return nil
-	}
-	if compressed <= 0 {
-		compressed = 1
-	}
-	ratio := float64(expanded) / float64(compressed)
-	if ratio > limits.MaxCompressionRatio {
-		return &artifact.LimitError{Limit: "compression ratio", Value: int64(ratio), Max: int64(limits.MaxCompressionRatio)}
-	}
-	return nil
 }
 
 func contentType(name string) string {

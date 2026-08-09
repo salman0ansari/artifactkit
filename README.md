@@ -24,12 +24,14 @@ The important output is not another Markdown blob. Every section, value, row, an
 | EML | headers, text bodies, attachments | MIME part paths |
 | PNG, JPEG, GIF | dimensions and color model | source byte range |
 | ZIP, TAR, TAR.GZ, GZIP | safe entry inventory | normalized entry paths |
-
-DOCX, PPTX, XLSX, and PDF are being added as native Go adapters.
+| DOCX | headings, paragraphs, tables, links, headers, notes | package part and XML subpath |
+| PPTX | slides, text, tables, speaker notes | slide, package part, XML subpath |
+| XLSX | sheets, rows, cells, formulas, links, merged ranges | sheet, cell, package part |
+| PDF | page-scoped text | page number |
 
 ## Build
 
-ArtifactKit requires Go 1.24 or newer.
+ArtifactKit requires Go 1.24.1 or newer.
 
 ```bash
 go build -o artifactkit ./cmd/artifactkit
@@ -105,6 +107,8 @@ Use `artifactkit.WithLimits` to set input, text, node, nesting, expansion, and c
 - Safe by default: parsing is bounded; active content and macros are never executed.
 - Archive aware: traversal paths, duplicate entries, links, encryption, expansion, and suspicious compression ratios are handled explicitly.
 - Embeddable: the CLI and upcoming MCP server use the same public Go engine.
+
+ArtifactKit preserves spreadsheet formulas but never evaluates them. PDF extraction reads embedded text; it does not perform OCR on scanned pages.
 
 ## Status
 

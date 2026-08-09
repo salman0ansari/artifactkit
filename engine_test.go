@@ -27,6 +27,10 @@ func TestEngineInspectsRealFiles(t *testing.T) {
 		{"sample.zip", "zip", artifact.KindArchive},
 		{"sample.tar.gz", "tar.gz", artifact.KindArchive},
 		{"report.txt.gz", "gzip", artifact.KindArchive},
+		{"brief.docx", "docx", artifact.KindSection},
+		{"deck.pptx", "pptx", artifact.KindSlide},
+		{"workbook.xlsx", "xlsx", artifact.KindSheet},
+		{"report.pdf", "pdf", artifact.KindPage},
 	}
 	engine := artifactkit.New()
 	for _, test := range tests {
