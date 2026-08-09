@@ -50,6 +50,19 @@ func TestPPTXExtractsSlidesTablesAndNotes(t *testing.T) {
 	}
 }
 
+func TestNumberedPart(t *testing.T) {
+	tests := map[string]int{
+		"ppt/slides/slide2.xml":  2,
+		"ppt/slides/slide10.xml": 10,
+		"ppt/slides/slide.xml":   0,
+	}
+	for input, want := range tests {
+		if got := numberedPart(input); got != want {
+			t.Errorf("numberedPart(%q) = %d, want %d", input, got, want)
+		}
+	}
+}
+
 func TestXLSXExtractsSharedInlineFormulaAndHyperlinkCells(t *testing.T) {
 	document := parseFixture(t, "workbook.xlsx")
 	if document.Format != "xlsx" || document.Metadata["date_system"] != "1900" {

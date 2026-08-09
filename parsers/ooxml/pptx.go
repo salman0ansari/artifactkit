@@ -291,7 +291,7 @@ func (b *drawingBuilder) addNode() error {
 func numberedPart(value string) int {
 	base := path.Base(value)
 	base = strings.TrimSuffix(base, path.Ext(base))
-	for len(base) > 0 && base[0] < '0' || len(base) > 0 && base[0] > '9' {
+	for len(base) > 0 && (base[0] < '0' || base[0] > '9') {
 		base = base[1:]
 	}
 	number, _ := strconv.Atoi(base)

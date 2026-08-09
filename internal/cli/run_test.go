@@ -37,3 +37,15 @@ func TestRunFindFromStdin(t *testing.T) {
 		t.Fatalf("missing JSON Pointer: %s", stdout.String())
 	}
 }
+
+func TestRunMCPRejectsMissingRoot(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	missing := filepath.Join(t.TempDir(), "missing")
+	code := Run(context.Background(), []string{"mcp", "--root", missing}, bytes.NewReader(nil), &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit %d, stderr: %s", code, stderr.String())
+	}
+	if !bytes.Contains(stderr.Bytes(), []byte("resolve root")) {
+		t.Fatalf("missing root error: %s", stderr.String())
+	}
+}
