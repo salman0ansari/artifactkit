@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<catalog version="1">
+  <artifact id="a1"><name>Incident report</name><status>ready</status></artifact>
+  <artifact id="a2"><name>Metrics</name><status>queued</status></artifact>
+</catalog>
+

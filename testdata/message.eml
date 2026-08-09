@@ -1,0 +1,21 @@
+From: Ops Agent <ops@example.test>
+To: Research Agent <research@example.test>
+Subject: =?UTF-8?Q?ArtifactKit_checkpoint?=
+Date: Sun, 9 Aug 2026 12:00:00 +0000
+Message-ID: <artifactkit-1@example.test>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="artifactkit-boundary"
+
+--artifactkit-boundary
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+The agent can inspect this message and list its attachment.
+--artifactkit-boundary
+Content-Type: application/json; name="config.json"
+Content-Disposition: attachment; filename="config.json"
+Content-Transfer-Encoding: base64
+
+eyJzYWZlIjp0cnVlLCJ0b29sIjoiaW5zcGVjdCJ9
+--artifactkit-boundary--
+

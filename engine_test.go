@@ -20,6 +20,13 @@ func TestEngineInspectsRealFiles(t *testing.T) {
 		{"incident.md", "markdown", artifact.KindSection},
 		{"config.json", "json", artifact.KindObject},
 		{"metrics.csv", "csv", artifact.KindTable},
+		{"page.html", "html", artifact.KindSection},
+		{"catalog.xml", "xml", artifact.KindElement},
+		{"message.eml", "eml", artifact.KindParagraph},
+		{"pixel.png", "png", artifact.KindImage},
+		{"sample.zip", "zip", artifact.KindArchive},
+		{"sample.tar.gz", "tar.gz", artifact.KindArchive},
+		{"report.txt.gz", "gzip", artifact.KindArchive},
 	}
 	engine := artifactkit.New()
 	for _, test := range tests {

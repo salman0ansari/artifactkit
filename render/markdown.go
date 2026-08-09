@@ -45,6 +45,30 @@ func markdownNode(writer io.Writer, node *artifact.Node, headingLevel, indent in
 		if err := markdownTable(writer, node); err != nil {
 			return err
 		}
+	case artifact.KindAttachment:
+		if _, err := fmt.Fprintf(writer, "- Attachment: **%s**%s\n", node.Name, detailSuffix(node.Attributes)); err != nil {
+			return err
+		}
+	case artifact.KindEntry:
+		if _, err := fmt.Fprintf(writer, "- `%s`%s\n", node.Name, detailSuffix(node.Attributes)); err != nil {
+			return err
+		}
+	case artifact.KindLink:
+		label := node.Name
+		if label == "" {
+			label = node.Attributes["href"]
+		}
+		if _, err := fmt.Fprintf(writer, "[%s](%s)\n\n", label, node.Attributes["href"]); err != nil {
+			return err
+		}
+	case artifact.KindImage:
+		if source := node.Attributes["src"]; source != "" {
+			if _, err := fmt.Fprintf(writer, "![%s](%s)\n\n", node.Name, source); err != nil {
+				return err
+			}
+		} else if _, err := fmt.Fprintf(writer, "- Image: **%s**%s\n", node.Name, detailSuffix(node.Attributes)); err != nil {
+			return err
+		}
 	case artifact.KindField:
 		if len(node.Children) == 1 && node.Children[0].Kind == artifact.KindValue {
 			if _, err := fmt.Fprintf(writer, "%s- **%s:** %s\n", strings.Repeat("  ", indent), node.Name, node.Children[0].Text); err != nil {
@@ -80,6 +104,19 @@ func markdownNode(writer io.Writer, node *artifact.Node, headingLevel, indent in
 		}
 	}
 	return nil
+}
+
+func detailSuffix(attributes map[string]string) string {
+	var details []string
+	for _, key := range []string{"media_type", "size", "width", "height", "type"} {
+		if value := attributes[key]; value != "" {
+			details = append(details, key+"="+value)
+		}
+	}
+	if len(details) == 0 {
+		return ""
+	}
+	return " (" + strings.Join(details, ", ") + ")"
 }
 
 func markdownTable(writer io.Writer, table *artifact.Node) error {

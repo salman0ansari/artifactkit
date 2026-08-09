@@ -19,6 +19,7 @@ const (
 	KindSlide      Kind = "slide"
 	KindSheet      Kind = "sheet"
 	KindImage      Kind = "image"
+	KindLink       Kind = "link"
 	KindAttachment Kind = "attachment"
 	KindArchive    Kind = "archive"
 	KindEntry      Kind = "entry"
@@ -27,6 +28,7 @@ const (
 	KindField      Kind = "field"
 	KindValue      Kind = "value"
 	KindMetadata   Kind = "metadata"
+	KindElement    Kind = "element"
 )
 
 // ByteRange is a half-open byte interval in the original source.
@@ -44,6 +46,11 @@ type Locator struct {
 	Sheet     string     `json:"sheet,omitempty"`
 	Cell      string     `json:"cell,omitempty"`
 	ByteRange *ByteRange `json:"byte_range,omitempty"`
+}
+
+// IsZero lets JSON encoders omit absent provenance cleanly.
+func (l Locator) IsZero() bool {
+	return l.Path == "" && l.Page == 0 && l.Slide == 0 && l.Sheet == "" && l.Cell == "" && l.ByteRange == nil
 }
 
 func (l Locator) String() string {
@@ -76,7 +83,7 @@ type Node struct {
 	Name       string            `json:"name,omitempty"`
 	Text       string            `json:"text,omitempty"`
 	Level      int               `json:"level,omitempty"`
-	Locator    Locator           `json:"locator,omitempty"`
+	Locator    Locator           `json:"locator,omitzero"`
 	Attributes map[string]string `json:"attributes,omitempty"`
 	Children   []Node            `json:"children,omitempty"`
 }
@@ -87,14 +94,14 @@ type Resource struct {
 	Name      string  `json:"name"`
 	MediaType string  `json:"media_type,omitempty"`
 	Size      int64   `json:"size,omitempty"`
-	Locator   Locator `json:"locator,omitempty"`
+	Locator   Locator `json:"locator,omitzero"`
 }
 
 // Warning reports a recoverable parse condition.
 type Warning struct {
 	Code    string  `json:"code"`
 	Message string  `json:"message"`
-	Locator Locator `json:"locator,omitempty"`
+	Locator Locator `json:"locator,omitzero"`
 }
 
 // Artifact is the normalized representation returned by every parser.

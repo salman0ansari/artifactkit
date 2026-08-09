@@ -19,8 +19,13 @@ The important output is not another Markdown blob. Every section, value, row, an
 | JSON | objects, arrays, fields, values | JSON Pointer |
 | CSV | table, rows, cells | row byte ranges and cell IDs |
 | TSV | table, rows, cells | row byte ranges and cell IDs |
+| HTML | headings, paragraphs, tables, links, images | DOM paths |
+| XML | elements, attributes, text | indexed element paths |
+| EML | headers, text bodies, attachments | MIME part paths |
+| PNG, JPEG, GIF | dimensions and color model | source byte range |
+| ZIP, TAR, TAR.GZ, GZIP | safe entry inventory | normalized entry paths |
 
-DOCX, PPTX, XLSX, PDF, HTML, email, images, and safe archives are being added as native Go adapters.
+DOCX, PPTX, XLSX, and PDF are being added as native Go adapters.
 
 ## Build
 
@@ -98,6 +103,7 @@ Use `artifactkit.WithLimits` to set input, text, node, nesting, expansion, and c
 - Deterministic: identical bytes produce identical artifact and node IDs.
 - Provenance preserving: normalized content points back to its source location.
 - Safe by default: parsing is bounded; active content and macros are never executed.
+- Archive aware: traversal paths, duplicate entries, links, encryption, expansion, and suspicious compression ratios are handled explicitly.
 - Embeddable: the CLI and upcoming MCP server use the same public Go engine.
 
 ## Status
@@ -107,4 +113,3 @@ ArtifactKit is under active development. The normalized model is usable now, but
 ## License
 
 MIT
-

@@ -10,9 +10,13 @@ import (
 
 	"github.com/salman0ansari/artifactkit/artifact"
 	"github.com/salman0ansari/artifactkit/parser"
+	"github.com/salman0ansari/artifactkit/parsers/archive"
 	"github.com/salman0ansari/artifactkit/parsers/delimited"
+	"github.com/salman0ansari/artifactkit/parsers/email"
+	imageinfo "github.com/salman0ansari/artifactkit/parsers/image"
 	"github.com/salman0ansari/artifactkit/parsers/jsondoc"
 	"github.com/salman0ansari/artifactkit/parsers/text"
+	"github.com/salman0ansari/artifactkit/parsers/web"
 )
 
 // Engine detects and parses artifacts using a bounded parser registry.
@@ -34,7 +38,9 @@ func New(options ...Option) *Engine {
 
 func defaultRegistry() *parser.Registry {
 	registry := parser.NewRegistry()
-	for _, candidate := range []parser.Parser{jsondoc.New(), delimited.New(), text.New()} {
+	for _, candidate := range []parser.Parser{
+		jsondoc.New(), delimited.New(), web.NewHTML(), web.NewXML(), email.New(), imageinfo.New(), archive.New(), text.New(),
+	} {
 		if err := registry.Register(candidate); err != nil {
 			panic(err)
 		}

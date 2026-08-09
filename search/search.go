@@ -16,7 +16,7 @@ type Result struct {
 	Name    string           `json:"name,omitempty"`
 	Snippet string           `json:"snippet"`
 	Score   int              `json:"score"`
-	Locator artifact.Locator `json:"locator,omitempty"`
+	Locator artifact.Locator `json:"locator,omitzero"`
 }
 
 // Find performs case-insensitive token search and returns strongest matches first.
