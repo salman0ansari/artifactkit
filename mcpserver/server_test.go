@@ -48,7 +48,7 @@ func TestMCPServerAgentWorkflow(t *testing.T) {
 		}
 	}
 	sort.Strings(names)
-	if len(names) != 8 || names[0] != "artifact_extract_table" || names[7] != "artifact_read" {
+	if len(names) != 9 || names[0] != "artifact_extract_table" || names[8] != "artifact_read" {
 		t.Fatalf("unexpected MCP tools: %v", names)
 	}
 
@@ -71,6 +71,10 @@ func TestMCPServerAgentWorkflow(t *testing.T) {
 	nested := callTool(t, ctx, clientSession, "artifact_inspect_resource", map[string]any{"resource_uri": resourceURI}).(map[string]any)
 	if nested["format"] != "text" || nested["name"] != "docs/readme.txt" {
 		t.Fatalf("unexpected nested artifact: %#v", nested)
+	}
+	files := callTool(t, ctx, clientSession, "artifact_list_files", map[string]any{"path": root, "recursive": true, "limit": 2}).(map[string]any)
+	if len(files["files"].([]any)) != 2 || files["truncated"] != true {
+		t.Fatalf("unexpected file list: %#v", files)
 	}
 
 	workbook := callTool(t, ctx, clientSession, "artifact_inspect", map[string]any{"path": filepath.Join(root, "workbook.xlsx")}).(map[string]any)

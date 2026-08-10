@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 
@@ -17,6 +18,8 @@ import (
 )
 
 var ErrArtifactNotFound = errors.New("artifactkit: artifact is not loaded")
+
+var errStopWalk = errors.New("artifactkit: stop file walk")
 
 type Options struct {
 	Roots        []string
@@ -201,6 +204,85 @@ func (s *Service) Resources(ctx context.Context, reference string) ([]artifact.R
 		return nil, err
 	}
 	return append([]artifact.Resource(nil), document.Resources...), nil
+}
+
+// ListFiles discovers regular files under a configured root without following symlinks.
+func (s *Service) ListFiles(ctx context.Context, directory string, recursive bool, limit int) (*FileList, error) {
+	secureDirectory, err := s.securePath(directory)
+	if err != nil {
+		return nil, err
+	}
+	info, err := os.Stat(secureDirectory)
+	if err != nil {
+		return nil, err
+	}
+	if !info.IsDir() {
+		return nil, fmt.Errorf("artifactkit: path %q is not a directory", directory)
+	}
+	if limit == 0 {
+		limit = 200
+	}
+	if limit < 1 || limit > 2_000 {
+		return nil, fmt.Errorf("artifactkit: file list limit must be between 1 and 2000")
+	}
+
+	result := &FileList{Directory: secureDirectory, Files: make([]FileEntry, 0, limit)}
+	add := func(path string, entry os.DirEntry) error {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if entry.Type()&os.ModeSymlink != 0 || !entry.Type().IsRegular() {
+			return nil
+		}
+		if len(result.Files) == limit {
+			result.Truncated = true
+			return errStopWalk
+		}
+		entryInfo, err := entry.Info()
+		if err != nil {
+			return err
+		}
+		relative, err := filepath.Rel(secureDirectory, path)
+		if err != nil {
+			return err
+		}
+		result.Files = append(result.Files, FileEntry{Path: path, RelativePath: relative, Size: entryInfo.Size()})
+		return nil
+	}
+
+	if recursive {
+		err = filepath.WalkDir(secureDirectory, func(path string, entry os.DirEntry, walkErr error) error {
+			if walkErr != nil {
+				return walkErr
+			}
+			if path == secureDirectory {
+				return ctx.Err()
+			}
+			if entry.Type()&os.ModeSymlink != 0 {
+				if entry.IsDir() {
+					return filepath.SkipDir
+				}
+				return nil
+			}
+			return add(path, entry)
+		})
+	} else {
+		var entries []os.DirEntry
+		entries, err = os.ReadDir(secureDirectory)
+		if err == nil {
+			for _, entry := range entries {
+				err = add(filepath.Join(secureDirectory, entry.Name()), entry)
+				if err != nil {
+					break
+				}
+			}
+		}
+	}
+	if err != nil && !errors.Is(err, errStopWalk) {
+		return nil, err
+	}
+	sort.Slice(result.Files, func(i, j int) bool { return result.Files[i].RelativePath < result.Files[j].RelativePath })
+	return result, nil
 }
 
 func (s *Service) Engine() *artifactkit.Engine { return s.engine }

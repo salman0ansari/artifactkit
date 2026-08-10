@@ -50,6 +50,18 @@ type OutlineItem struct {
 	Locator artifact.Locator `json:"locator,omitzero"`
 }
 
+type FileEntry struct {
+	Path         string `json:"path"`
+	RelativePath string `json:"relative_path"`
+	Size         int64  `json:"size"`
+}
+
+type FileList struct {
+	Directory string      `json:"directory"`
+	Files     []FileEntry `json:"files"`
+	Truncated bool        `json:"truncated"`
+}
+
 func Summarize(document *artifact.Artifact) Summary {
 	summary := Summary{
 		ArtifactID: document.ID, Name: document.Name, Format: document.Format, MediaType: document.MediaType,

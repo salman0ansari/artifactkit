@@ -73,6 +73,12 @@ type ProvenanceInput struct {
 	NodeID   string `json:"node_id" jsonschema:"Deterministic node ID."`
 }
 
+type ListFilesInput struct {
+	Path      string `json:"path" jsonschema:"Directory under a configured root."`
+	Recursive bool   `json:"recursive,omitempty" jsonschema:"Include files in descendant directories."`
+	Limit     int    `json:"limit,omitempty" jsonschema:"Maximum files; defaults to 200 and cannot exceed 2000."`
+}
+
 func New(service *agent.Service, version string) *mcp.Server {
 	if version == "" {
 		version = "dev"
@@ -151,6 +157,17 @@ func New(service *agent.Service, version string) *mcp.Server {
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input ReferenceInput) (*mcp.CallToolResult, []artifact.Resource, error) {
 		resources, err := service.Resources(ctx, input.Artifact)
 		return nil, resources, err
+	})
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name: "artifact_list_files", Title: "List artifact files",
+		Description: "Discover regular files under a configured root with bounded recursion and no symlink following.", Annotations: annotations,
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input ListFilesInput) (*mcp.CallToolResult, agent.FileList, error) {
+		files, err := service.ListFiles(ctx, input.Path, input.Recursive, input.Limit)
+		if err != nil {
+			return nil, agent.FileList{}, err
+		}
+		return nil, *files, nil
 	})
 
 	mcp.AddTool(server, &mcp.Tool{

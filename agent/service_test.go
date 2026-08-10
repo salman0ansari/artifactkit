@@ -93,6 +93,43 @@ func TestServiceRejectsPathsOutsideRootsAndSymlinkEscapes(t *testing.T) {
 	}
 }
 
+func TestServiceListsRootScopedFilesWithoutFollowingSymlinks(t *testing.T) {
+	root := t.TempDir()
+	subdirectory := filepath.Join(root, "nested")
+	if err := os.Mkdir(subdirectory, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	for path, content := range map[string]string{
+		filepath.Join(root, "a.txt"):          "a",
+		filepath.Join(subdirectory, "b.json"): "{}",
+	} {
+		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	outside := filepath.Join(t.TempDir(), "outside.txt")
+	if err := os.WriteFile(outside, []byte("secret"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_ = os.Symlink(outside, filepath.Join(root, "escape.txt"))
+
+	service, err := NewService(artifactkit.New(), Options{Roots: []string{root}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	flat, err := service.ListFiles(context.Background(), root, false, 10)
+	if err != nil || len(flat.Files) != 1 || flat.Files[0].RelativePath != "a.txt" {
+		t.Fatalf("unexpected flat list: %#v err=%v", flat, err)
+	}
+	recursive, err := service.ListFiles(context.Background(), root, true, 1)
+	if err != nil || len(recursive.Files) != 1 || !recursive.Truncated {
+		t.Fatalf("unexpected recursive list: %#v err=%v", recursive, err)
+	}
+	if _, err := service.ListFiles(context.Background(), filepath.Dir(outside), true, 10); err == nil {
+		t.Fatal("outside directory was accepted")
+	}
+}
+
 func TestServiceEvictsOldDocuments(t *testing.T) {
 	root, err := filepath.Abs(filepath.Join("..", "testdata"))
 	if err != nil {

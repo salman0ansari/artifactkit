@@ -31,6 +31,7 @@ A generic client configuration looks like:
 | `artifact_read` | read a node by characters or a lazy resource by bytes |
 | `artifact_extract_table` | page through a table while preserving cell IDs and formulas |
 | `artifact_list_attachments` | list email attachments, archive entries, and embedded Office media |
+| `artifact_list_files` | discover regular files under a configured root without following symlinks |
 | `artifact_get_provenance` | return a node's exact locator and semantic ancestry |
 | `artifact_formats` | list formats supported by the running build |
 

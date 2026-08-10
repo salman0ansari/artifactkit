@@ -82,7 +82,7 @@ Start the agent server with an explicit filesystem boundary:
 artifactkit mcp --root /absolute/path/to/documents
 ```
 
-The MCP server exposes `artifact_inspect`, `artifact_inspect_resource`, `artifact_find`, `artifact_read`, `artifact_extract_table`, `artifact_list_attachments`, `artifact_get_provenance`, and `artifact_formats`. Attachments and archive entries can be parsed recursively without writing temporary files. See [MCP setup](docs/mcp.md).
+The MCP server exposes root-scoped file discovery, artifact inspection and search, recursive resource inspection, bounded reads, table extraction, attachment listing, provenance, and format discovery. Attachments and archive entries can be parsed recursively without writing temporary files. See [MCP setup](docs/mcp.md).
 
 ## Go API
 
@@ -134,6 +134,7 @@ nested, err := engine.InspectResource(ctx, document.Resources[0].URI)
 - Archive aware: traversal paths, duplicate entries, links, encryption, expansion, and suspicious compression ratios are handled explicitly.
 - Embeddable: the CLI and MCP server use the same public Go engine.
 - Root restricted: the MCP server resolves symlinks and rejects paths outside configured directories.
+- Discoverable: agents can list regular files under configured roots without following symlinks.
 
 ArtifactKit preserves spreadsheet formulas but never evaluates them. PDF extraction reads embedded text; it does not perform OCR on scanned pages.
 
