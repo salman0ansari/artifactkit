@@ -11,6 +11,7 @@ import (
 	"github.com/salman0ansari/artifactkit/artifact"
 	"github.com/salman0ansari/artifactkit/parser"
 	"github.com/salman0ansari/artifactkit/parsers/archive"
+	"github.com/salman0ansari/artifactkit/parsers/config"
 	"github.com/salman0ansari/artifactkit/parsers/delimited"
 	"github.com/salman0ansari/artifactkit/parsers/email"
 	imageinfo "github.com/salman0ansari/artifactkit/parsers/image"
@@ -47,7 +48,7 @@ func New(options ...Option) *Engine {
 func defaultRegistry() *parser.Registry {
 	registry := parser.NewRegistry()
 	for _, candidate := range []parser.Parser{
-		jsondoc.New(), delimited.New(), web.NewHTML(), web.NewXML(), email.New(), imageinfo.New(), ooxml.New(), pdfparser.New(), archive.New(), text.New(),
+		config.New(), jsondoc.New(), delimited.New(), web.NewHTML(), web.NewXML(), email.New(), imageinfo.New(), ooxml.New(), pdfparser.New(), archive.New(), text.New(),
 	} {
 		if err := registry.Register(candidate); err != nil {
 			panic(err)

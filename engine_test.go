@@ -19,6 +19,8 @@ func TestEngineInspectsRealFiles(t *testing.T) {
 	}{
 		{"incident.md", "markdown", artifact.KindSection},
 		{"config.json", "json", artifact.KindObject},
+		{"settings.yaml", "yaml", artifact.KindObject},
+		{"pipeline.toml", "toml", artifact.KindObject},
 		{"metrics.csv", "csv", artifact.KindTable},
 		{"page.html", "html", artifact.KindSection},
 		{"catalog.xml", "xml", artifact.KindElement},

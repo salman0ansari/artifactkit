@@ -1,0 +1,9 @@
+agent:
+  name: researcher
+  enabled: true
+  retries: 3
+  tags:
+    - local
+    - safe
+models:
+  primary: gpt-5

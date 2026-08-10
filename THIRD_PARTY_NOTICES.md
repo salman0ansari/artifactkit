@@ -4,6 +4,8 @@ ArtifactKit uses the following Go modules:
 
 - `github.com/ledongthuc/pdf` — PDF reader, BSD 3-Clause license.
 - `github.com/modelcontextprotocol/go-sdk` — official MCP SDK, Apache 2.0 and MIT licensing transition.
+- `github.com/pelletier/go-toml/v2` — TOML parser, MIT license.
+- `go.yaml.in/yaml/v3` — YAML parser, Apache 2.0 and MIT licenses.
 - `golang.org/x/net` — HTML tokenizer and parser, BSD 3-Clause license.
 
 Both contain work copyrighted by The Go Authors and are redistributed under the following terms:

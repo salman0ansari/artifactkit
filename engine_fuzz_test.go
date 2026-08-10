@@ -11,7 +11,7 @@ import (
 )
 
 func FuzzEngineInspect(f *testing.F) {
-	for _, name := range []string{"incident.md", "config.json", "metrics.csv", "page.html", "message.eml", "sample.zip", "brief.docx", "deck.pptx", "workbook.xlsx", "report.pdf"} {
+	for _, name := range []string{"incident.md", "config.json", "settings.yaml", "pipeline.toml", "metrics.csv", "page.html", "message.eml", "sample.zip", "brief.docx", "deck.pptx", "workbook.xlsx", "report.pdf"} {
 		data, err := os.ReadFile(filepath.Join("testdata", name))
 		if err != nil {
 			f.Fatal(err)

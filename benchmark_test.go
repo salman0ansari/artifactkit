@@ -11,7 +11,7 @@ import (
 )
 
 func BenchmarkInspect(b *testing.B) {
-	for _, name := range []string{"incident.md", "config.json", "metrics.csv", "brief.docx", "deck.pptx", "workbook.xlsx", "report.pdf"} {
+	for _, name := range []string{"incident.md", "config.json", "settings.yaml", "pipeline.toml", "metrics.csv", "brief.docx", "deck.pptx", "workbook.xlsx", "report.pdf"} {
 		data, err := os.ReadFile(filepath.Join("testdata", name))
 		if err != nil {
 			b.Fatal(err)

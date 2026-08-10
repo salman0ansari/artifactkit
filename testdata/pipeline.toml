@@ -1,0 +1,9 @@
+title = "ArtifactKit Pipeline"
+
+[agent]
+name = "researcher"
+enabled = true
+retries = 3
+
+[limits]
+timeout_ms = 1500

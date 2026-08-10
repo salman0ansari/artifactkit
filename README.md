@@ -17,6 +17,8 @@ The important output is not another Markdown blob. Every section, value, row, an
 | Markdown | sections and paragraphs | byte ranges |
 | Plain text | paragraphs | byte ranges |
 | JSON | objects, arrays, fields, values | JSON Pointer |
+| YAML | mappings, sequences, typed scalars, multi-document streams | key path, line, column |
+| TOML | tables, arrays, typed values | key path |
 | CSV | table, rows, cells | row byte ranges and cell IDs |
 | TSV | table, rows, cells | row byte ranges and cell IDs |
 | HTML | headings, paragraphs, tables, links, images | DOM paths |
