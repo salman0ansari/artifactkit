@@ -145,6 +145,23 @@ func (e *Engine) ReadResource(ctx context.Context, uri string, offset, limit int
 	return e.resources.Read(ctx, uri, offset, limit)
 }
 
+// InspectResource parses a lazy attachment or container entry as a new artifact.
+// The resource must have been registered by an earlier inspection on this engine.
+func (e *Engine) InspectResource(ctx context.Context, uri string) (*artifact.Artifact, error) {
+	if e.resources == nil {
+		return nil, resource.ErrExpired
+	}
+	content, err := e.resources.ReadAll(ctx, uri, e.limits.MaxInputBytes)
+	if err != nil {
+		return nil, fmt.Errorf("inspect resource %q: %w", uri, err)
+	}
+	document, err := e.InspectBytes(ctx, content.Name, content.Data)
+	if err != nil {
+		return nil, fmt.Errorf("inspect resource %q: %w", uri, err)
+	}
+	return document, nil
+}
+
 // ResourceStats reports the current bounded source-byte cache usage.
 func (e *Engine) ResourceStats() resource.Stats {
 	if e.resources == nil {

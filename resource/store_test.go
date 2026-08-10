@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -61,6 +62,30 @@ func TestResourceReadSupportsRanges(t *testing.T) {
 	}
 	if got, want := string(content.Data), "archive"; got != want || content.EOF {
 		t.Fatalf("range = %q eof=%v, want %q eof=false", got, content.EOF, want)
+	}
+}
+
+func TestResourceReadAllUsesInspectionLimit(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", "testdata", "sample.zip"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	engine := artifactkit.New()
+	document, err := engine.InspectBytes(context.Background(), "sample.zip", data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	item := document.Resources[0]
+	store := resource.NewStore(artifact.DefaultLimits())
+	if !store.Put(document, data) {
+		t.Fatal("store rejected fixture")
+	}
+	if _, err := store.ReadAll(context.Background(), item.URI, item.Size-1); err == nil {
+		t.Fatal("expected inspection limit error")
+	}
+	content, err := store.ReadAll(context.Background(), item.URI, item.Size)
+	if err != nil || string(content.Data) != "ArtifactKit archive fixture\n" {
+		t.Fatalf("unexpected content: %#v err=%v", content, err)
 	}
 }
 

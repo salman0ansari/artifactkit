@@ -49,6 +49,29 @@ func TestServiceAgentWorkflow(t *testing.T) {
 	}
 }
 
+func TestServiceInspectsNestedResource(t *testing.T) {
+	root, err := filepath.Abs(filepath.Join("..", "testdata"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	service, err := NewService(artifactkit.New(), Options{Roots: []string{root}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	container, err := service.Inspect(context.Background(), filepath.Join(root, "sample.zip"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	nested, err := service.InspectResource(context.Background(), container.Resources[0].URI)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resolved, err := service.Resolve(context.Background(), nested.ID)
+	if err != nil || resolved.Format != "text" {
+		t.Fatalf("nested artifact was not cached: %#v err=%v", resolved, err)
+	}
+}
+
 func TestServiceRejectsPathsOutsideRootsAndSymlinkEscapes(t *testing.T) {
 	root := t.TempDir()
 	outside := filepath.Join(t.TempDir(), "outside.txt")

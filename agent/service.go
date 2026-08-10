@@ -86,22 +86,40 @@ func (s *Service) Inspect(ctx context.Context, filePath string) (*artifact.Artif
 	if err != nil {
 		return nil, err
 	}
+	return s.remember(document, securePath), nil
+}
+
+// InspectResource parses a resource exposed by an already-loaded artifact.
+func (s *Service) InspectResource(ctx context.Context, uri string) (*artifact.Artifact, error) {
+	document, err := s.engine.InspectResource(ctx, uri)
+	if err != nil {
+		return nil, err
+	}
+	return s.remember(document, ""), nil
+}
+
+func (s *Service) remember(document *artifact.Artifact, securePath string) *artifact.Artifact {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if record := s.documents[document.ID]; record != nil {
-		record.paths[securePath] = struct{}{}
-		s.paths[securePath] = document.ID
+		if securePath != "" {
+			record.paths[securePath] = struct{}{}
+			s.paths[securePath] = document.ID
+		}
 		s.recency.MoveToFront(record.element)
-		return record.document, nil
+		return record.document
 	}
 	for len(s.documents) >= s.maxDocuments {
 		s.evictOldest()
 	}
-	record := &documentRecord{document: document, paths: map[string]struct{}{securePath: {}}}
+	record := &documentRecord{document: document, paths: make(map[string]struct{})}
+	if securePath != "" {
+		record.paths[securePath] = struct{}{}
+		s.paths[securePath] = document.ID
+	}
 	record.element = s.recency.PushFront(record)
 	s.documents[document.ID] = record
-	s.paths[securePath] = document.ID
-	return document, nil
+	return document
 }
 
 func (s *Service) Resolve(ctx context.Context, reference string) (*artifact.Artifact, error) {

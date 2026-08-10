@@ -48,7 +48,7 @@ func TestMCPServerAgentWorkflow(t *testing.T) {
 		}
 	}
 	sort.Strings(names)
-	if len(names) != 7 || names[0] != "artifact_extract_table" || names[6] != "artifact_read" {
+	if len(names) != 8 || names[0] != "artifact_extract_table" || names[7] != "artifact_read" {
 		t.Fatalf("unexpected MCP tools: %v", names)
 	}
 
@@ -67,6 +67,10 @@ func TestMCPServerAgentWorkflow(t *testing.T) {
 	resourceView := read["resource"].(map[string]any)
 	if read["kind"] != "resource" || resourceView["encoding"] != "utf-8" || resourceView["content"] != "ArtifactKit " {
 		t.Fatalf("unexpected resource read: %#v", read)
+	}
+	nested := callTool(t, ctx, clientSession, "artifact_inspect_resource", map[string]any{"resource_uri": resourceURI}).(map[string]any)
+	if nested["format"] != "text" || nested["name"] != "docs/readme.txt" {
+		t.Fatalf("unexpected nested artifact: %#v", nested)
 	}
 
 	workbook := callTool(t, ctx, clientSession, "artifact_inspect", map[string]any{"path": filepath.Join(root, "workbook.xlsx")}).(map[string]any)

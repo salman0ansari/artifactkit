@@ -52,6 +52,24 @@ func TestEngineInspectsRealFiles(t *testing.T) {
 	}
 }
 
+func TestEngineInspectsLazyResourceAsArtifact(t *testing.T) {
+	engine := artifactkit.New()
+	container, err := engine.InspectPath(context.Background(), filepath.Join("testdata", "sample.zip"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(container.Resources) == 0 {
+		t.Fatal("archive exposed no resources")
+	}
+	document, err := engine.InspectResource(context.Background(), container.Resources[0].URI)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if document.Format != "text" || document.Name != "docs/readme.txt" {
+		t.Fatalf("unexpected nested artifact: %#v", document)
+	}
+}
+
 func TestEnginePreservesProvenance(t *testing.T) {
 	engine := artifactkit.New()
 	document, err := engine.InspectPath(context.Background(), filepath.Join("testdata", "metrics.csv"))

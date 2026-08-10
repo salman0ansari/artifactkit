@@ -82,7 +82,7 @@ Start the agent server with an explicit filesystem boundary:
 artifactkit mcp --root /absolute/path/to/documents
 ```
 
-The MCP server exposes `artifact_inspect`, `artifact_find`, `artifact_read`, `artifact_extract_table`, `artifact_list_attachments`, `artifact_get_provenance`, and `artifact_formats`. See [MCP setup](docs/mcp.md).
+The MCP server exposes `artifact_inspect`, `artifact_inspect_resource`, `artifact_find`, `artifact_read`, `artifact_extract_table`, `artifact_list_attachments`, `artifact_get_provenance`, and `artifact_formats`. Attachments and archive entries can be parsed recursively without writing temporary files. See [MCP setup](docs/mcp.md).
 
 ## Go API
 
@@ -116,6 +116,12 @@ Attachments, archive entries, and embedded Office media are lazy resources. Insp
 
 ```go
 content, err := engine.ReadResource(ctx, document.Resources[0].URI, 0, 4096)
+```
+
+Parse an attachment or archive entry as its own typed artifact:
+
+```go
+nested, err := engine.InspectResource(ctx, document.Resources[0].URI)
 ```
 
 ## Design rules

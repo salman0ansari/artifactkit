@@ -133,6 +133,54 @@ func (s *Store) Read(ctx context.Context, uri string, offset, limit int64) (*Con
 	return content, nil
 }
 
+// ReadAll extracts an entire lazy resource for bounded recursive inspection.
+// maxBytes is independent from the smaller range-read limit used by Read.
+func (s *Store) ReadAll(ctx context.Context, uri string, maxBytes int64) (*Content, error) {
+	if s == nil {
+		return nil, ErrExpired
+	}
+	if maxBytes <= 0 {
+		return nil, fmt.Errorf("artifactkit: resource inspection limit must be positive")
+	}
+	digest, err := digestFromURI(uri)
+	if err != nil {
+		return nil, err
+	}
+	s.mu.Lock()
+	record := s.items[digest]
+	if record == nil {
+		s.mu.Unlock()
+		return nil, ErrExpired
+	}
+	item, exists := record.resources[uri]
+	if !exists {
+		s.mu.Unlock()
+		return nil, ErrNotFound
+	}
+	if item.Size < 0 {
+		s.mu.Unlock()
+		return nil, fmt.Errorf("artifactkit: resource has a negative declared size")
+	}
+	if item.Size > maxBytes {
+		s.mu.Unlock()
+		return nil, &artifact.LimitError{Limit: "input bytes", Value: item.Size, Max: maxBytes}
+	}
+	s.recency.MoveToFront(record.element)
+	format := record.format
+	data := record.data
+	s.mu.Unlock()
+
+	content, err := readStored(ctx, format, data, item, 0, item.Size, s.limits)
+	if err != nil {
+		return nil, err
+	}
+	content.URI = uri
+	content.Name = item.Name
+	content.MediaType = item.MediaType
+	content.Size = item.Size
+	return content, nil
+}
+
 func (s *Store) Clear() {
 	if s == nil {
 		return

@@ -22,6 +22,10 @@ type InspectInput struct {
 	Path string `json:"path" jsonschema:"Path to a local artifact under a configured root."`
 }
 
+type InspectResourceInput struct {
+	ResourceURI string `json:"resource_uri" jsonschema:"Lazy resource URI returned by artifact_list_attachments."`
+}
+
 type ReferenceInput struct {
 	Artifact string `json:"artifact" jsonschema:"Artifact ID returned by artifact_inspect, or a local path under a configured root."`
 }
@@ -81,6 +85,17 @@ func New(service *agent.Service, version string) *mcp.Server {
 		Description: "Detect and parse a local artifact into a bounded typed tree; returns an artifact ID and concise outline.", Annotations: annotations,
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, input InspectInput) (*mcp.CallToolResult, agent.Summary, error) {
 		document, err := service.Inspect(ctx, input.Path)
+		if err != nil {
+			return nil, agent.Summary{}, err
+		}
+		return nil, agent.Summarize(document), nil
+	})
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name: "artifact_inspect_resource", Title: "Inspect artifact resource",
+		Description: "Parse an attachment or archive entry as a new bounded artifact without writing it to disk.", Annotations: annotations,
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, input InspectResourceInput) (*mcp.CallToolResult, agent.Summary, error) {
+		document, err := service.InspectResource(ctx, input.ResourceURI)
 		if err != nil {
 			return nil, agent.Summary{}, err
 		}
