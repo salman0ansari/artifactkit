@@ -31,6 +31,8 @@ The important output is not another Markdown blob. Every section, value, row, an
 | XLSX | sheets, rows, cells, formulas, links, merged ranges | sheet, cell, package part |
 | PDF | page-scoped text | page number |
 
+See the [format output gallery](docs/format-output.md) for representative CLI results from every supported format.
+
 ## Build
 
 ArtifactKit requires Go 1.25 or newer.
