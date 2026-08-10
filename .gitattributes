@@ -1,0 +1,13 @@
+* text=auto eol=lf
+
+# Structured binary fixtures contain byte offsets and must never be rewritten.
+*.pdf binary
+*.docx binary
+*.pptx binary
+*.xlsx binary
+*.zip binary
+*.gz binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
